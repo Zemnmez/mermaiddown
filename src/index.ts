@@ -68,16 +68,16 @@ const main = async () => {
         return svg;
     }
 
-    const renderer = new class MermaiddownRenderer extends Renderer {
-        code(code: string, lang?: string, escaped?: boolean) {
-            if (lang != "mermaid") return super.code(code, lang, escaped);
-            return mermaidify(code);
-        }
-    }
+    const out = fs.readFileSync(0, 'utf-8')
+        .replace(
+            /^```mermaid($(?:[^`]|`[^`]|``[^`])+^)```$/gm,
+            (_, code) => {
+                console.error("mermaiding", code);
+                return mermaidify(code)
+            }
+        )
 
-    Marked.setOptions({ renderer });
-    console.error("reading markdown from stdin...")
-    console.log(`<!DOCTYPE HTML>${"\n"}${Marked.parse(fs.readFileSync(0, 'utf-8'))}`);
+    console.log(out);
 }
 
 main().catch(error => {
