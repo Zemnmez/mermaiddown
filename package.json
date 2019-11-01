@@ -22,9 +22,7 @@
     "tmp": "^0.1.0"
   },
   "scripts": {
-    "make-readme": "cat _README.md | yarn run --silent start > README.html",
-    "prepare": "install-peers",
-    "build": "tsc",
-    "start": "tsc && node dist/index.js"
+    "build": "make build",
+    "start": "make start"
   }
 }

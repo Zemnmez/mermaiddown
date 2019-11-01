@@ -77,7 +77,7 @@ const main = async () => {
 
     Marked.setOptions({ renderer });
     console.error("reading markdown from stdin...")
-    console.log(Marked.parse(fs.readFileSync(0, 'utf-8')));
+    console.log(`<!DOCTYPE HTML>${"\n"}${Marked.parse(fs.readFileSync(0, 'utf-8'))}`);
 }
 
 main().catch(error => {
