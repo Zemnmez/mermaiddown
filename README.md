@@ -7,7 +7,7 @@ Inspired by the amazing concepts underlying the visual studio plugin [Markdown P
 This operates slightly differently from other similar packages in that the SVGs are embedded into the output
 HTML. This means that links in the diagram are clickable :)
 
-[Example Diagram]: "assets/example.svg"
+[Example Diagram]: assets/example.svg
 
 ![Example Diagram]
 

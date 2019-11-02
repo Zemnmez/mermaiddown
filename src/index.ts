@@ -76,7 +76,7 @@ const main = async () => {
 
                 console.error(`${title} => ${filename}`)
                 mermaidify(content, filename);
-                return `[${title}]: "${filename}"\n\n`+
+                return `[${title}]: ${filename}\n\n`+
                     `![${title}]`;
             }
         )
