@@ -1,9 +1,8 @@
-import { Marked, Renderer } from 'marked-ts';
+#!/usr/bin/env node
+
 import * as tmp from 'tmp';
-import * as util from 'util';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
-import { fail } from 'assert';
 
 const mermaidName = "mermaid.cli";
 
