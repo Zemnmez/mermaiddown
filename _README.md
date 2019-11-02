@@ -8,6 +8,8 @@ This operates slightly differently from other similar packages in that the SVGs 
 HTML. This means that links in the diagram are clickable :)
 
 ```mermaid
+%%%% Example Diagram    %%%%
+%%%% assets/example.svg %%%%
 graph TD;
     a["mermaiddown"];
     click a "#mermaiddown";

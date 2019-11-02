@@ -18,6 +18,10 @@ an SVG rendering of the mermaid code.
 Flags for rendering are the same as \`${mermaidName}\`.
 
 `
+
+const reMermaid = /^```mermaid\n%%%%(?<title>[^\n`%]+)%%%%\n%%%%(?<filename>[^%`\n]+)%%%%\n(?<content>(?:[^`]|`[^`]|``[^`])*)^```$/gim
+
+
 const tmpFile = (options: tmp.FileOptions): Promise<{
     name: string,
     fd: number,
@@ -42,14 +46,15 @@ const main = async () => {
         return;
     }
 
-    const [tmpInFile, tmpOutFile] = await Promise.all([".md",".svg"].map(async ext =>
+
+    const [tmpInFile] = await Promise.all([".md"].map(async ext =>
         (await tmpFile({ postfix: ext })).name ));
 
     // has to be synchronous because Renderer is synchronous
-    const mermaidify = (code: string): string => {
+    const mermaidify = ( code: string, filename: string ) => {
         fs.writeFileSync(tmpInFile, code, { flag: 'w'});
 
-        const args = [...cmd.slice(1), "-o", tmpOutFile, "-i", tmpInFile, ...process.argv.slice(2)];
+        const args = [...cmd.slice(1), "-o", filename, "-i", tmpInFile, ...process.argv.slice(2)];
 
         console.error(`${cmd[0]} ${args.map(a => `"${a}"`).join(" ")}`);
 
@@ -60,20 +65,19 @@ const main = async () => {
 
         if (error) throw error;
         if (status != 0) throw new Error(`${mermaidName} failed`);
-
-        const svg: string = fs.readFileSync(tmpOutFile).toString();
-
-        if (svg.trim().length == 0) throw new Error(`svg blank; ${mermaidName} likely failed`);
-
-        return svg;
     }
 
     const out = fs.readFileSync(0, 'utf-8')
         .replace(
-            /^```mermaid($(?:[^`]|`[^`]|``[^`])+^)```$/gm,
-            (_, code) => {
-                console.error("mermaiding", code);
-                return mermaidify(code)
+            reMermaid,
+            (_, title, filename, content) => {
+
+                ([title, filename] = [title, filename].map<string>(s=>s.trim()))
+
+                console.error(`${title} => ${filename}`)
+                mermaidify(content, filename);
+                return `[${title}]: "${filename}"\n\n`+
+                    `![${title}]`;
             }
         )
 
