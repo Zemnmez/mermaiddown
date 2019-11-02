@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Inline mermaid diagrams for markdown and html",
   "main": "dist/index.js",
-  "repository": "git@github.com:Zemnmez/mermaiddown.git",
+  "repository": "https://github.com/zemnmez/mermaiddown",
   "author": "zemnmez",
   "license": "MIT",
   "private": false,
@@ -13,16 +13,15 @@
     "install-peers-cli": "^2.1.1",
     "typescript": "^3.6.4"
   },
-  "peerDependencies": {
-    "marked-ts": "^1.0.0-beta.4"
-  },
   "dependencies": {
-    "marked-ts": "^1.0.0-beta.4",
     "mermaid.cli": "^0.5.1",
     "tmp": "^0.1.0"
   },
   "scripts": {
     "build": "make build",
     "start": "make start"
+  },
+  "bin": {
+    "mermaiddown": "./dist/index.js"
   }
 }
