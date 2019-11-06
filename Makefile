@@ -10,5 +10,5 @@ build: README.md dist/index.js
 
 .PHONY: start
 
-start: dist/index.js
+start: dist/example.js
 	node $<

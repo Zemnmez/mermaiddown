@@ -1,88 +1,124 @@
-#!/usr/bin/env node
-
-import * as tmp from 'tmp';
-import * as child_process from 'child_process';
-import * as fs from 'fs';
-
-const mermaidName = "mermaid.cli";
-
-const cmd = ["npx", mermaidName];
-
-const help = `${process.argv[0]}: turn fenced mermaid markdown code blocks into inline svgs.
-
-${process.argv[0]} parses and renders markdown code provided by STDIN. Importantly, where a fenced mermaid block
-(\`\`\`mermaid <code> \`\`\`) exists in the markdown code, it is replaced transparently with
-an SVG rendering of the mermaid code.
-
-Flags for rendering are the same as \`${mermaidName}\`.
-
-`
+import * as puppeteer from 'puppeteer';
+import { AssertionError, ok } from 'assert';
+import mermaid from 'mermaid';
+import mermaidAPI from 'mermaid/mermaidAPI';
+import { List } from 'immutable';
+import {writeFile} from 'fs';
+import { promisify } from 'util';
 
 const reMermaid = /^```mermaid\n%%%%(?<title>[^\n`%]+)%%%%\n%%%%(?<filename>[^%`\n]+)%%%%\n(?<content>(?:[^`]|`[^`]|``[^`])*)^```$/gim
 
+type replacer = (params: RegExpExecArray) => Promise<string>
+const replace = async (str: string, re: RegExp, replacer: replacer) => {
+    re.lastIndex = 0;
+    let repls: List<Promise<{
+        start: number,
+        end: number,
+        replacement: string
+    }>> = List();
 
-const tmpFile = (options: tmp.FileOptions): Promise<{
-    name: string,
-    fd: number,
-    removeCallback: () => void
-}> =>
-    new Promise((ok, fail) => {
-        tmp.file(options, (err: any, name: string, fd: number, removeCallback: () => void) => {
-            if (err) fail(err);
-            ok({ name, fd, removeCallback});
-        })
-    });
+    for (let m: RegExpExecArray | null;;) {
+        m = re.exec(str);
+        if (!m) break;
+        const [ start, end ] = [ m.index, re.lastIndex ];
 
-
-const main = async () => {
-    if (process.argv.includes("-i")) throw new Error(`illegal -i flag: ${process.argv[0]} will specify its own inputs.`)
-    if (process.argv.includes("-h")) {
-        console.log(help);
-        const { error } = child_process.spawnSync(cmd[0], [...cmd.slice(1), "-q", "-h"], {
-            stdio: ['inherit', 'inherit', 'inherit']
-        });
-        if (error) throw error;
-        return;
-    }
-
-
-    const [tmpInFile] = await Promise.all([".md"].map(async ext =>
-        (await tmpFile({ postfix: ext })).name ));
-
-    // has to be synchronous because Renderer is synchronous
-    const mermaidify = ( code: string, filename: string ) => {
-        fs.writeFileSync(tmpInFile, code, { flag: 'w'});
-
-        const args = [...cmd.slice(1), "-o", filename, "-i", tmpInFile, ...process.argv.slice(2)];
-
-        console.error(`${cmd[0]} ${args.map(a => `"${a}"`).join(" ")}`);
-
-        const { error, status } = child_process.spawnSync(cmd[0], args, {
-            // pass thru stderr (i always wonder why this isnt the default)
-            stdio: ['pipe', 'inherit', 'inherit']
-        });
-
-        if (error) throw error;
-        if (status != 0) throw new Error(`${mermaidName} failed`);
-    }
-
-    const out = fs.readFileSync(0, 'utf-8')
-        .replace(
-            reMermaid,
-            (_, title, filename, content) => {
-
-                ([title, filename] = [title, filename].map<string>(s=>s.trim()))
-
-                console.error(`${title} => ${filename}`)
-                mermaidify(content, filename);
-                return `[${title}]: ${filename}\n\n`+
-                    `![${title}]`;
+        repls = repls.push((async () => {
+            const replacement = await replacer(m);
+            return  {
+                start,
+                end,
+                replacement
             }
-        )
+        })());
+    }
 
-    console.log(out);
+    let bits: List<string> = List();
+    const resolvedRepls = await Promise.all(repls);
+    let prevEnd = 0;
+    resolvedRepls.forEach(({start, end, replacement}) => {
+        bits = bits.push(str.slice(prevEnd, start));
+        bits = bits.push(replacement);
+        prevEnd = end;
+    })
+
+    bits = bits.push(str.slice(prevEnd));
+
+    return bits.join("");
 }
 
-main().catch(error => {
-    console.log(error);
-});
+export class Mermaiddown {
+    puppet: puppeteer.Browser;
+    constructor({ puppet }: {
+        puppet: puppeteer.Browser
+    }) {
+        this.puppet = puppet;
+    }
+
+    async replaceAll(mdcode: string): Promise<string> {
+        return replace(mdcode, reMermaid, async match => {
+            const { title, filename, content: code } = match.groups as { title: string, filename: string, content: string};
+            const svg = this.render({code});
+
+            await promisify(writeFile)(filename, await svg)
+
+            return `[${title}]: ${filename}\n![${filename}]`
+        })
+    }
+
+    async render({ code, config }: {
+        code: string,
+        config?: mermaidAPI.Config
+    }): Promise<string> {
+        const p = new Page({ page: await this.puppet.newPage()});
+
+        p.navigateToCode(
+            "text/html",
+            "<!DOCTYPE HTML><title>mermaid renderer</title>"
+        )
+
+        const svg = await p.page.evaluate(() => {
+            mermaid.initialize(config || {})
+
+            return new Promise<string>((ok, fail) => mermaidAPI.render('', code, svgCode => ok(svgCode)));
+        });
+
+        p.page.close();
+        return svg;
+    }  
+}
+
+export class Page {
+    page: puppeteer.Page;
+    constructor({ page }: {
+        page: puppeteer.Page,
+    }) {
+        this.page = page;
+    }
+
+    async navigateToCode(mime: string, code: string) {
+        await this.page.goto(
+            `data:${mime},${encodeURIComponent(code)}`
+        );
+    }
+}
+
+const isUndefined = (x: any): x is undefined => 
+    x === undefined;
+
+
+
+function assert(condition: any, error: AssertionError): asserts condition {
+    if (!condition) {
+        throw error
+    }
+}
+
+
+export async function NewMermaiddown({ puppet }: {
+    puppet?: puppeteer.Browser
+}): Promise<Mermaiddown> {
+    puppet = puppet || await puppeteer.launch();
+    return new Mermaiddown({puppet})
+};
+
+
