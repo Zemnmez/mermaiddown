@@ -25,8 +25,5 @@
   "scripts": {
     "build": "make build",
     "start": "make start"
-  },
-  "bin": {
-    "mermaiddown": "./dist/index.js"
   }
 }
