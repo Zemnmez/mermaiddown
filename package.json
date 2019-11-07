@@ -1,6 +1,6 @@
 {
   "name": "mermaiddown",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "Inline mermaid diagrams for markdown and html",
   "main": "dist/index.js",
   "repository": "https://github.com/zemnmez/mermaiddown",
