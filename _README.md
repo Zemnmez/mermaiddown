@@ -1,6 +1,5 @@
 # Mermaiddown
-Mermaiddown is a wrapper for [mermaid.cli] that targets markdown. Markdown files get parsed, and fenced mermaid code blocks
-(`\`\`\`mermaid \`\`\``) get replaced with their corresponding mermaid diagrams in SVG format.
+Mermaiddown is a node API that can be used to add inline mermaid diagrams to Markdown.
 
 Inspired by the amazing concepts underlying the visual studio plugin [Markdown Preview Mermaid Support].
 
@@ -20,8 +19,8 @@ graph LR;
 ```
 
 ## Usage
-`cat myfile.md | npx mermaiddown > out.md`
-
+[example.ts]: src/example.ts
+See [example.ts].
 Fenced areas meeting this form are used:
 ```markdown
     ```mermaid

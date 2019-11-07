@@ -1,5 +1,5 @@
-dist/%.js: src/*.ts | dist/mermaid.min.js dist/index.html
-	tsc
+dist/%.js: src/*.ts dist/mermaid.min.js dist/index.html
+	yarn run tsc
 
 dist/mermaid.min.js: node_modules/mermaid/dist/mermaid.min.js
 	cp $< $@
@@ -7,8 +7,8 @@ dist/mermaid.min.js: node_modules/mermaid/dist/mermaid.min.js
 dist/index.html: src/index.html
 	cp $< $@
 
-README.md: dist/index.js _README.md
-	cat _README.md | node $< > $@
+README.md: dist/index.js dist/example.js _README.md
+	node dist/example.js
 
 .PHONY: build
 

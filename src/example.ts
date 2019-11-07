@@ -7,7 +7,7 @@ const debug = false;
 
 const main = async () => {
     const md = NewMermaiddown({
-        puppet: await puppeteer.launch({ headless: debug })
+        puppet: await puppeteer.launch({ headless: !debug })
     });
     const code = promisify(readFile)("_README.md");
 
