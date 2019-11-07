@@ -7,8 +7,7 @@ Inspired by the amazing concepts underlying the visual studio plugin [Markdown P
 Was originally hoping to embed the SVGs directly so the links worked ... seems like you can't do that on github :(
 
 [Example Diagram]: assets/example.svg
-
-![Example Diagram]
+![assets/example.svg]
 
 ## Usage
 `cat myfile.md | npx mermaiddown > out.md`
