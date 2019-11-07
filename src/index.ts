@@ -65,7 +65,7 @@ export class Mermaiddown {
             await promisify(writeFile)(filename, await svg)
             console.log("saved", filename);
 
-            return `[${title}]: ${filename}\n![${filename}]`
+            return `[${title}]: ${filename}\n![${title}]`
         })
     }
 
@@ -76,7 +76,7 @@ export class Mermaiddown {
         const p = new Page({ page: await this.puppet.newPage()});
 
 
-        await p.page.goto(`file://${pathJoin(__dirname, "index.html")}`)
+        await p.page.goto(`file://${pathJoin(__dirname, "index.html")}`);
 
         await p.page.waitForFunction('window.mermaid.mermaidAPI.initialize');
 
