@@ -1,9 +1,9 @@
-import puppeteer from 'puppeteer';
 import { AssertionError, ok } from 'assert';
 import { List } from 'immutable';
 import {writeFile, readFile} from 'fs';
 import { promisify } from 'util';
-import { join as pathJoin } from 'path';
+import { renderMermaid } from 'mermaid-render';
+import * as puppeteer from 'puppeteer';
 
 const reMermaid = /^```mermaid\n%%%%(?<title>[^\n`%]+)%%%%\n%%%%(?<filename>[^%`\n]+)%%%%\n(?<content>(?:[^`]|`[^`]|``[^`])*)^```$/gim
 
@@ -73,35 +73,11 @@ export class Mermaiddown {
         code: string,
         config?: any
     }): Promise<string> {
-        const p = new Page({ page: await this.puppet.newPage()});
-
-
-        await p.page.goto(`file://${pathJoin(__dirname, "index.html")}`);
-
-        await p.page.waitForFunction('window.mermaid.mermaidAPI.initialize');
-
-
-        const svg = await p.page.evaluate((code) => {
-            const mermaid: any = window["mermaid" as any];
-            const mermaidAPI: any = mermaid.mermaidAPI;
-
-            mermaid.mermaidAPI.initialize({})
-
-            return new Promise<string>((ok, fail) => mermaidAPI.render('render', code, (svgCode: string) => ok(svgCode)));
-        }, code);
-
-        p.page.close();
-        return svg;
+        return renderMermaid(code, {
+            browser: this.puppet,
+            initParams: config
+        })
     }  
-}
-
-export class Page {
-    page: puppeteer.Page;
-    constructor({ page }: {
-        page: puppeteer.Page,
-    }) {
-        this.page = page;
-    }
 }
 
 const isUndefined = (x: any): x is undefined => 
@@ -115,10 +91,12 @@ function assert(condition: any, error: AssertionError): asserts condition {
     }
 }
 
-
 export async function NewMermaiddown({ puppet }: {
     puppet?: puppeteer.Browser
 }): Promise<Mermaiddown> {
-    puppet = puppet || await puppeteer.launch();
+    puppet = puppet || await puppeteer.launch({
+        // for wsl support
+        args: ["--no-sandbox"]
+    });
     return new Mermaiddown({puppet})
 };

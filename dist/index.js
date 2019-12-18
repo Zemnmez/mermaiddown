@@ -1,13 +1,17 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const puppeteer_1 = __importDefault(require("puppeteer"));
 const immutable_1 = require("immutable");
 const fs_1 = require("fs");
 const util_1 = require("util");
-const path_1 = require("path");
+const mermaid_render_1 = require("mermaid-render");
+const puppeteer = __importStar(require("puppeteer"));
 const reMermaid = /^```mermaid\n%%%%(?<title>[^\n`%]+)%%%%\n%%%%(?<filename>[^%`\n]+)%%%%\n(?<content>(?:[^`]|`[^`]|``[^`])*)^```$/gim;
 const replace = async (str, re, replacer) => {
     re.lastIndex = 0;
@@ -54,26 +58,13 @@ class Mermaiddown {
         });
     }
     async render({ code, config }) {
-        const p = new Page({ page: await this.puppet.newPage() });
-        await p.page.goto(`file://${path_1.join(__dirname, "index.html")}`);
-        await p.page.waitForFunction('window.mermaid.mermaidAPI.initialize');
-        const svg = await p.page.evaluate((code) => {
-            const mermaid = window["mermaid"];
-            const mermaidAPI = mermaid.mermaidAPI;
-            mermaid.mermaidAPI.initialize({});
-            return new Promise((ok, fail) => mermaidAPI.render('render', code, (svgCode) => ok(svgCode)));
-        }, code);
-        p.page.close();
-        return svg;
+        return mermaid_render_1.renderMermaid(code, {
+            browser: this.puppet,
+            initParams: config
+        });
     }
 }
 exports.Mermaiddown = Mermaiddown;
-class Page {
-    constructor({ page }) {
-        this.page = page;
-    }
-}
-exports.Page = Page;
 const isUndefined = (x) => x === undefined;
 function assert(condition, error) {
     if (!condition) {
@@ -81,7 +72,10 @@ function assert(condition, error) {
     }
 }
 async function NewMermaiddown({ puppet }) {
-    puppet = puppet || await puppeteer_1.default.launch();
+    puppet = puppet || await puppeteer.launch({
+        // for wsl support
+        args: ["--no-sandbox"]
+    });
     return new Mermaiddown({ puppet });
 }
 exports.NewMermaiddown = NewMermaiddown;

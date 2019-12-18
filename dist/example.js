@@ -10,7 +10,10 @@ const puppeteer_1 = __importDefault(require("puppeteer"));
 const debug = false;
 const main = async () => {
     const md = index_1.NewMermaiddown({
-        puppet: await puppeteer_1.default.launch({ headless: !debug })
+        puppet: await puppeteer_1.default.launch({
+            args: ["--no-sandbox"],
+            headless: !debug
+        })
     });
     const code = util_1.promisify(fs_1.readFile)("_README.md");
     const newFile = (await md).replaceAll((await code).toString());
